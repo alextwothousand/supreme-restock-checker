@@ -14,10 +14,10 @@ let pattern: RegExp = /^((https:\/\/)(www.)?supremenewyork.com\/shop\/\w+\/\w+\/
 
 const patternTestSuccessful = () => {
 	checkForItemChange(); 
-	setInterval(checkForItemChange, (settings.interval * 1000));
+	setInterval(checkForItemChange, settings.interval > 0 ? (settings.interval * 1000) : 10000);
 }
 
-const log = (text: string | string[]) => {
+const log = (text: string | string[], con: boolean = false) => {
 	let currentDate = Date();
 	let data: string = "";
 
@@ -29,14 +29,15 @@ const log = (text: string | string[]) => {
 		data = `[${currentDate}] ${text}`;
 	}
 
-	fs.appendFile(path.join(__dirname, "../debug.log"), data, (err) => console.log(err));
+	fs.appendFile(path.join(__dirname, "../debug.log"), data, (err) => { if (err) console.log(err) });
+	if (con === true && !Array.isArray(text)) console.log(text);
 }
 
 const checkForItemChange = () => {
 	let options = {
 		uri: settings.url,
 		headers: {
-			'User-Agent': settings.user_agent
+			'User-Agent': (settings.user_agent.length > 0 ? settings.user_agent : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36")
 		}
 	};
 	
@@ -55,8 +56,12 @@ const checkForItemChange = () => {
 			lastHash = sha;
 		})
 		.catch(function(err){
-			console.error(err);
+			log(err, true);
 		});
 }
 
-pattern.test(settings.url) ? patternTestSuccessful() : console.log(`Your URL is invalid, please ensure it matches the syntax of ${pattern.toString()}`);
+if (settings.clear_logs === true) {
+	fs.unlinkSync(path.join(__dirname, "../debug.log"));
+}
+
+pattern.test(settings.url) ? patternTestSuccessful() : log(`Your URL is invalid, please ensure it matches the syntax of ${pattern.toString()}.`, true);
