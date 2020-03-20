@@ -1,44 +1,62 @@
 import rp from "request-promise";
 import crypto from "crypto";
 
+import chalk from "chalk";
+
+import sound from "sound-play";
+import path from "path";
+
+import fs from "fs";
+import settings from "./settings.json";
+
 let lastHash: string | null = null;
+let pattern: RegExp = /^((https:\/\/)(www.)?supremenewyork.com\/shop\/\w+\/\w+\/\w+\/?)$/;
+
+const patternTestSuccessful = () => {
+	checkForItemChange(); 
+	setInterval(checkForItemChange, (settings.interval * 1000));
+}
+
+const log = (text: string | string[]) => {
+	let currentDate = Date();
+	let data: string = "";
+
+	if (Array.isArray(text)) {
+		text.forEach((log: string) => {
+			data += `[${currentDate}] ${log}\n`;
+		});
+	} else {
+		data = `[${currentDate}] ${text}`;
+	}
+
+	fs.appendFile(path.join(__dirname, "../debug.log"), data, (err) => console.log(err));
+}
 
 const checkForItemChange = () => {
-	interface options {
-		uri: string;
+	let options = {
+		uri: settings.url,
 		headers: {
-			"User-Agent": string;
-		}
-	}
-	
-	let options: options = {
-		uri: "https://www.supremenewyork.com/shop/shoes/ndrgpvxhm/cxypn34k5",
-		headers: {
-			'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36'
+			'User-Agent': settings.user_agent
 		}
 	};
 	
 	rp(options)
 		.then(function(html){
 			let sha = crypto.createHash("sha1").update(html).digest("hex");
-
-			console.log("lastHash current value: " + lastHash);
-			console.log("current SHA value: " + sha);
-			console.log("HTML output: " + html);
+			log([`LastHash: ${lastHash}`, `CurrentHash: ${sha}`, `HTML Output: ${html}`]);
 	
 			if (lastHash !== sha && lastHash !== null) {
-				console.log("SUPREME X NIKE AIR FORCE 1 WHITE RESTOCKED!");
+				console.log(chalk.green("This item is now in stock again! GO COP!"));
+				sound.play(path.join(__dirname, "../audio/item_found.mp3"));
 			} else {
-				console.log("Checked and this item is still out of stock...");
+				console.log(chalk.red("Checked and this item is still out of stock..."));
 			}
 	
 			lastHash = sha;
 		})
 		.catch(function(err){
-			//handle error
 			console.error(err);
 		});
 }
 
-checkForItemChange();
-setInterval(checkForItemChange, 15000);
+pattern.test(settings.url) ? patternTestSuccessful() : console.log(`Your URL is invalid, please ensure it matches the syntax of ${pattern.toString()}`);
