@@ -1,0 +1,21 @@
+{
+	"name": "supreme-restock-checker",
+	"version": "1.0.0",
+	"description": "",
+	"main": "dist/index.js",
+	"scripts": {
+		"start": "tsc && node dist/index.js"
+	},
+	"author": "",
+	"license": "ISC",
+	"devDependencies": {
+		"@types/request-promise": "^4.1.45",
+		"@types/node": "^13.9.2",
+		"typescript": "^3.8.3"
+	},
+	"dependencies": {
+		"crypto": "^1.0.1",
+		"request": "^2.88.2",
+		"request-promise": "^4.2.5"
+	}
+}
